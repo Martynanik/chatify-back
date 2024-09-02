@@ -1,4 +1,5 @@
-const bcrypt = require("bcrypt")
+// const bcrypt = require("bcrypt")
+const bcryptjs = require('bcryptjs');
 const jwt = require("jsonwebtoken")
 const usersDb = require("../schemas/userSchema")
 const messagesDb = require("../schemas/messageSchema")
@@ -13,8 +14,11 @@ module.exports = {
             if (userExist) {
                 res.send({error: true, message: "User already exists.", data: null})
             } else {
-                const salt = await bcrypt.genSalt(10)
-                const passwordHash = await bcrypt.hash(data.passwordOne, salt)
+                // const salt = await bcrypt.genSalt(10)
+                // const passwordHash = await bcrypt.hash(data.passwordOne, salt)
+                const salt = bcryptjs.genSaltSync(10);
+                const passwordHash = bcryptjs.hashSync(data.passwordOne, salt);
+
                 const newUser = new usersDb({
                     username: data.username,
                     password: passwordHash,
@@ -37,7 +41,9 @@ module.exports = {
                 return res.send({error: true, message: "There is no such user registered.", data: null})
             }
 
-            const passValid = await bcrypt.compare(password, loggedInUser.password)
+            // const passValid = await bcrypt.compare(password, loggedInUser.password)
+
+            const passValid = await bcryptjs.compareSync(password, loggedInUser.password)
 
             if(passValid){
                 const data = {
