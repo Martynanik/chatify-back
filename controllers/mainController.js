@@ -98,11 +98,12 @@ module.exports = {
         if(!loggedInUser){
             return res.send({error: true, message: "There is no such user registered.", data: null})
         }
-        const passValid = await bcrypt.compare(currentPassword, loggedInUser.password)
+        const passValid = await bcryptjs.compareSync(currentPassword, loggedInUser.password)
 
         if(passValid){
-            const salt = await bcrypt.genSalt(10)
-            const passwordHash = await bcrypt.hash(passwordOne, salt)
+            const salt = bcryptjs.genSaltSync(10);
+            const passwordHash = bcryptjs.hashSync(passwordOne, salt);
+
             const updatedUser= await usersDb.findOneAndUpdate(
                 {username: username},
                 { $set: { password: passwordHash } },
