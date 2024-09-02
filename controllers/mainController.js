@@ -4,7 +4,6 @@ const jwt = require("jsonwebtoken")
 const usersDb = require("../schemas/userSchema")
 const messagesDb = require("../schemas/messageSchema")
 const conversationsDb = require("../schemas/conversationSchema")
-const mongoose = require('mongoose');
 
 module.exports = {
     register: async (req,res) => {
@@ -178,6 +177,7 @@ module.exports = {
                     participants: { $in: [data.senderId] }
                 });
 
+            //// creating data to update active conversations content and number
                 const conversationDetails = await Promise.all(conversations.map(async (conversation) => {
                     const otherParticipantId = conversation.participants.find(id => id.toString() !== data.senderId);
 
@@ -186,7 +186,7 @@ module.exports = {
                     return {
                         conversationId: conversation._id.toString(),
                         otherParticipantId:  otherParticipantId.toString(),
-                        username: user.username, // Assuming `username` is a field in the user document
+                        username: user.username,
                         image: user.image
                     };
                 }));
@@ -202,24 +202,19 @@ module.exports = {
     getConversations: async (req,res)=>{
         const participantId = req.params.participantId;
         try {
-            // Fetch conversations involving the participant
             const conversations = await conversationsDb.find({
                 participants: { $in: [participantId] }
             });
 
-            // Prepare an array of promises to fetch user details for other participants
+            // Prepare an array of  user details for other participants that would be displayed as active conversations with images and usernames
             const conversationDetails = await Promise.all(conversations.map(async (conversation) => {
-                // Find the ID of the other participant
                 const otherParticipantId = conversation.participants.find(id => id.toString() !== participantId);
-
-                // Fetch user details for the other participant
                 const user = await usersDb.findOne({ _id: otherParticipantId });
 
-                // Return the combined information
                 return {
                     conversationId: conversation._id.toString(),
                     otherParticipantId: otherParticipantId.toString(),
-                    username: user.username, // Assuming `username` is a field in the user document
+                    username: user.username,
                     image: user.image
                 };
             }));
@@ -255,6 +250,7 @@ module.exports = {
 
             await conversationsDb.findOneAndDelete({ _id: convId });
 
+            //// sending data back to update active conversations
             const conversations = await conversationsDb.find({
                 participants: { $in: [participantId] }
             });
@@ -266,7 +262,7 @@ module.exports = {
                 return {
                     conversationId: conversation._id.toString(),
                     otherParticipantId: otherParticipantId.toString(),
-                    username: user.username, // Assuming `username` is a field in the user document
+                    username: user.username,
                     image: user.image
                 };
             }));
@@ -306,6 +302,7 @@ module.exports = {
 
                 const updatedConversation = await conversationsDb.findOne({_id: data.conversationId}).populate("messages")
                 const messages = updatedConversation.messages
+                //// sending back updated messages to update chat that has been changed
                 return res.send({ error: false, message: "Message send successfully", data: messages });
 
             }
@@ -319,10 +316,9 @@ module.exports = {
         try {
             const updatedMessage = await messagesDb.findOneAndUpdate(
                 { _id: messageId },
-                [{ $set: { like: { $not: "$like" } } }], // Toggle the "like" field
+                [{ $set: { like: { $not: "$like" } } }],
                 { new: true }
             );
-
 
             if (updatedMessage) {
                 let conversation = await conversationsDb.findOne({_id: conversationId}).populate("messages")

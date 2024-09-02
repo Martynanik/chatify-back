@@ -1,5 +1,4 @@
 const jwt = require("jsonwebtoken")
-// const {pictureValidation, passwordValidation} = require("../controllers/mainController");
 
 module.exports = {
     registrationValidation: (req,res,next) =>{
